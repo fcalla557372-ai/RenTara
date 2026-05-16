@@ -183,7 +183,7 @@ class BookingController extends Controller
             $receiptPath = $request->file('balance_gcash_receipt')->store('gcash_receipts/balance', 'public');
         }
 
-        $booking->update([
+        $booking->payment->update([
             'balance_gcash_reference_no' => $request->balance_gcash_reference_no,
             'balance_gcash_receipt_path' => $receiptPath,
             'balance_payment_status'     => 'pending_confirmation',

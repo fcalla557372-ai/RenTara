@@ -42,16 +42,12 @@ class AdminTrackingController extends Controller
 
     public function confirmBalancePayment(Booking $booking)
     {
-        if ($booking->balance_payment_status !== 'pending_confirmation') {
+        if ($booking->payment?->balance_payment_status !== 'pending_confirmation') {
             return back()->with('error', 'No pending balance payment to confirm for this booking.');
         }
 
-        $booking->update([
-            'balance_status'         => 'paid',
-            'balance_payment_status' => 'confirmed',
-        ]);
-
         $booking->payment->update([
+            'balance_payment_status' => 'confirmed',
             'payment_status'   => 'Completed',
             'remaining_balance' => 0,
         ]);
@@ -69,10 +65,6 @@ class AdminTrackingController extends Controller
             'amount_paid'      => $booking->payment->amount_paid + $booking->payment->remaining_balance,
             'remaining_balance'=> 0,
             'payment_status'   => 'Completed',
-        ]);
-
-        $booking->update([
-            'balance_status'         => 'paid',
             'balance_payment_status' => 'confirmed',
         ]);
 

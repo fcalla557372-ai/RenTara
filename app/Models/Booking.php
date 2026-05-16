@@ -11,10 +11,6 @@ class Booking extends Model
     protected $fillable = [
         'user_id', 'car_id', 'pickup_date', 'return_date',
         'total_amount',
-        'balance_status',
-        'balance_gcash_reference_no',
-        'balance_gcash_receipt_path',
-        'balance_payment_status',
     ];
 
     protected $casts = [
@@ -60,21 +56,20 @@ class Booking extends Model
 
     public function getPaymentModeAttribute()
     {
-        return $this->payment_type;
+        return $this->payment?->payment_type;
     }
 
     public function canPayBalance(): bool
     {
-        return $this->payment_mode === 'partial'
-            && $this->payment_status === 'Pending Balance'
-            && $this->remaining_balance > 0
-            && ($this->balance_status ?? 'unpaid') === 'unpaid'
-            && $this->balance_payment_status === 'not_submitted';
+        return $this->payment?->payment_type === 'partial'
+            && $this->payment?->payment_status === 'Pending Balance'
+            && $this->payment?->remaining_balance > 0
+            && $this->payment?->balance_payment_status === 'not_submitted';
     }
 
     public function balancePaymentPending(): bool
     {
-        return $this->balance_payment_status === 'pending_confirmation';
+        return $this->payment?->balance_payment_status === 'pending_confirmation';
     }
 
     public function statusBadgeClass(): string
@@ -108,6 +103,16 @@ class Booking extends Model
     public function getGcashReceiptPathAttribute()
     {
         return $this->payment?->gcash_receipt_path;
+    }
+
+    public function getBalanceGcashReferenceNoAttribute()
+    {
+        return $this->payment?->balance_gcash_reference_no;
+    }
+
+    public function getBalanceGcashReceiptPathAttribute()
+    {
+        return $this->payment?->balance_gcash_receipt_path;
     }
 
     public function getValidIdPathAttribute()

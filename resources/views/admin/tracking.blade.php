@@ -109,7 +109,7 @@
                             <i class="bi bi-file-person me-1"></i>Docs
                         </button>
 
-                        @if($b->balance_payment_status === 'pending_confirmation')
+                        @if($b->payment?->balance_payment_status === 'pending_confirmation')
                             <form method="POST" action="{{ route('admin.tracking.confirmBalance', $b) }}" style="display:contents;">
                                 @csrf
                                 <button type="submit"
@@ -434,7 +434,7 @@
                                             @endif
                                         </div>
 
-                                        @if(in_array($b->balance_payment_status, ['pending_confirmation', 'confirmed']))
+                                        @if(in_array($b->payment?->balance_payment_status, ['pending_confirmation', 'confirmed']))
                                         <div style="margin-top:1.25rem;">
                                             <div style="font-size:.75rem; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:#94A3B8; margin-bottom:.75rem;">
                                                 Balance Payment Receipt
@@ -443,14 +443,14 @@
                                             {{-- Reference number --}}
                                             <div style="font-size:.8rem; color:#64748B; margin-bottom:.75rem;">
                                                 <span style="font-weight:700; color:#1E293B;">Ref No: </span>
-                                                {{ $b->balance_gcash_reference_no ?? '—' }}
+                                                {{ $b->payment?->balance_gcash_reference_no ?? '—' }}
                                             </div>
 
                                             {{-- Receipt image --}}
-                                            @if($b->balance_gcash_receipt_path)
-                                                <img src="{{ Storage::url($b->balance_gcash_receipt_path) }}"
+                                            @if($b->payment?->balance_gcash_receipt_path)
+                                                <img src="{{ Storage::url($b->payment->balance_gcash_receipt_path) }}"
                                                      style="width:100%; max-height:280px; object-fit:contain; border-radius:10px; border:1px solid #E2E8F0; display:block;">
-                                                <a href="{{ Storage::url($b->balance_gcash_receipt_path) }}"
+                                                <a href="{{ Storage::url($b->payment->balance_gcash_receipt_path) }}"
                                                    target="_blank"
                                                    style="font-size:.75rem; color:#3B82F6; font-weight:600; text-decoration:none; display:block; margin-top:.5rem;">
                                                     Open full size
@@ -459,8 +459,8 @@
 
                                             {{-- Confirmation status --}}
                                             <div style="margin-top:.75rem; font-size:.78rem; font-weight:700;
-                                                        color:{{ $b->balance_payment_status === 'confirmed' ? '#166534' : '#D97706' }};">
-                                                {{ $b->balance_payment_status === 'confirmed' ? '✓ Balance payment confirmed' : '⏳ Awaiting confirmation' }}
+                                                        color:{{ $b->payment?->balance_payment_status === 'confirmed' ? '#166534' : '#D97706' }};">
+                                                {{ $b->payment?->balance_payment_status === 'confirmed' ? '✓ Balance payment confirmed' : '⏳ Awaiting confirmation' }}
                                             </div>
                                         </div>
                                         @endif

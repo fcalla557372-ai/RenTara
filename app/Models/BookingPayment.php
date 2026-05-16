@@ -18,6 +18,9 @@ class BookingPayment extends Model
         'gcash_reference_no',
         'gcash_receipt_path',
         'payment_status',
+        'balance_gcash_reference_no',
+        'balance_gcash_receipt_path',
+        'balance_payment_status',
     ];
 
     protected $casts = [

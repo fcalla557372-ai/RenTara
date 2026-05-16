@@ -32,11 +32,6 @@ class User extends Authenticatable
         return $this->hasMany(Booking::class);
     }
 
-    public function userDocument()
-    {
-        return $this->hasOne(UserDocument::class);
-    }
-
     public function document()
     {
         return $this->hasOne(UserDocument::class);
