@@ -42,6 +42,7 @@
                         'Pending Payment' => '#D97706',
                         'Partial Payment' => '#B45309',
                         'Payment Confirmed' => '#1D4ED8',
+                        'Pending Balance' => '#0F766E',
                         'Completed' => '#166534',
                         default => '#991B1B',
                     };
@@ -76,11 +77,6 @@
                         <span style="font-size:.8rem; font-weight:700; color:{{ $statusColor }};">
                             {{ $b->payment?->payment_status ?? 'Unknown' }}
                         </span>
-                        @if(($b->payment?->payment_status ?? 'Unknown') === 'Completed' && ($b->payment?->remaining_balance ?? 0) > 0)
-                            <div style="margin-top:6px; display:inline-block; background:#FEF3C7; color:#92400E; padding:.35rem .75rem; border-radius:8px; font-size:.75rem;">
-                                You have a remaining balance of ₱{{ number_format($b->payment?->remaining_balance ?? 0, 2) }}. Please settle with staff.
-                            </div>
-                        @endif
                     </td>
                     <td style="display:flex; align-items:center; gap:.85rem;">
                         @if(($b->payment?->payment_status ?? 'Unknown') === 'Pending Payment')
@@ -92,11 +88,122 @@
                                     <i class="bi bi-x-lg me-1"></i>Cancel
                                 </button>
                             </form>
+                        @elseif($b->canPayBalance())
+                            <button type="button"
+                                    style="background:none; border:none; padding:0; font-size:.8rem; font-weight:700; color:#166534; cursor:pointer; text-decoration:underline; text-underline-offset:3px;"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#payBalanceModal{{ $b->id }}">
+                                Pay Balance
+                            </button>
+                        @elseif($b->balancePaymentPending())
+                            <span style="font-size:.75rem; font-weight:600; color:#D97706;">
+                                Awaiting confirmation
+                            </span>
                         @else
-                            <span style="color:#CBD5E1; font-size:.85rem;">—</span>
+                            <span style="color:#CBD5E1;">—</span>
                         @endif
                     </td>
                 </tr>
+
+                @if($b->canPayBalance())
+                <div class="modal fade" id="payBalanceModal{{ $b->id }}" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered" style="max-width:480px;">
+                        <div class="modal-content" style="border-radius:16px; border:none; box-shadow:0 8px 32px rgba(0,0,0,.12);">
+
+                            {{-- Modal Header --}}
+                            <div class="modal-header" style="border-bottom:1px solid #F1F5F9; padding:1.25rem 1.5rem;">
+                                <div>
+                                    <h5 class="modal-title" style="font-weight:800; color:#1E293B; font-size:1rem; margin:0;">
+                                        Pay Remaining Balance
+                                    </h5>
+                                    <p style="font-size:.78rem; color:#94A3B8; margin:.2rem 0 0;">
+                                        {{ $b->car->name }} — Booking #{{ str_pad($b->id, 5, '0', STR_PAD_LEFT) }}
+                                    </p>
+                                </div>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+
+                            {{-- Modal Body --}}
+                            <div class="modal-body" style="padding:1.5rem;">
+
+                                {{-- Balance Summary --}}
+                                <div style="background:#F0FDF4; border:1px solid #BBF7D0; border-radius:10px; padding:1rem 1.25rem; margin-bottom:1.25rem;">
+                                    <div style="font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:#166534; margin-bottom:.5rem;">
+                                        Amount Due
+                                    </div>
+                                    <div style="font-size:1.6rem; font-weight:900; color:#166534;">
+                                        ₱{{ number_format($b->remaining_balance, 2) }}
+                                    </div>
+                                    <div style="font-size:.75rem; color:#64748B; margin-top:.25rem;">
+                                        This is the remaining 50% balance for your {{ $b->car->name }} rental.
+                                    </div>
+                                </div>
+
+                                {{-- GCash Info Banner --}}
+                                <div style="background:#EDE9FE; border:1px solid #C4B5FD; border-radius:10px; padding:.875rem 1rem; margin-bottom:1.25rem; display:flex; gap:.75rem; align-items:flex-start;">
+                                    <span style="font-size:1rem; flex-shrink:0;">💙</span>
+                                    <div style="font-size:.8rem; color:#5B21B6; line-height:1.5;">
+                                        Send <strong>₱{{ number_format($b->remaining_balance, 2) }}</strong> via GCash to our registered number, then enter your reference number and upload the receipt below.
+                                    </div>
+                                </div>
+
+                                {{-- Payment Form --}}
+                                <form method="POST"
+                                      action="{{ route('customer.my-bookings.pay-balance', $b) }}"
+                                      enctype="multipart/form-data"
+                                      id="balanceForm{{ $b->id }}">
+                                    @csrf
+
+                                    {{-- GCash Reference Number --}}
+                                    <div style="margin-bottom:1rem;">
+                                        <label style="display:block; font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.07em; color:#64748B; margin-bottom:.4rem;">
+                                            GCash Reference Number *
+                                        </label>
+                                        <input type="text"
+                                               name="balance_gcash_reference_no"
+                                               placeholder="e.g. 7040 658 290157"
+                                               maxlength="30"
+                                               required
+                                               style="width:100%; background:#F8FAFC; border:1px solid #E2E8F0; border-radius:9px; color:#1E293B; font-size:.875rem; padding:10px 12px; outline:none; font-family:inherit;"
+                                               onfocus="this.style.borderColor='#F59E0B'; this.style.boxShadow='0 0 0 3px rgba(245,158,11,.12)'"
+                                               onblur="this.style.borderColor='#E2E8F0'; this.style.boxShadow='none'">
+                                    </div>
+
+                                    {{-- Upload Receipt --}}
+                                    <div style="margin-bottom:1.25rem;">
+                                        <label style="display:block; font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.07em; color:#64748B; margin-bottom:.4rem;">
+                                            Upload GCash Receipt Screenshot *
+                                        </label>
+                                        <div style="position:relative;">
+                                            <input type="file"
+                                                   name="balance_gcash_receipt"
+                                                   accept=".jpg,.jpeg,.png"
+                                                   required
+                                                   id="balanceReceipt{{ $b->id }}"
+                                                   onchange="showReceiptName(this, 'receiptName{{ $b->id }}')"
+                                                   style="position:absolute; inset:0; opacity:0; cursor:pointer; z-index:2;">
+                                            <div style="background:#F8FAFC; border:1px dashed #CBD5E1; border-radius:9px; padding:10px 12px; display:flex; align-items:center; gap:.5rem; font-size:.8rem; color:#94A3B8; cursor:pointer;">
+                                                📎 Choose file or drag here
+                                            </div>
+                                        </div>
+                                        <div id="receiptName{{ $b->id }}" style="font-size:.72rem; color:#166534; font-weight:600; margin-top:.3rem; display:none;"></div>
+                                        <div style="font-size:.7rem; color:#94A3B8; margin-top:.25rem;">JPG or PNG only — max 10MB</div>
+                                    </div>
+
+                                    {{-- Submit --}}
+                                    <button type="submit"
+                                            style="width:100%; padding:12px; border:none; border-radius:10px; background:#F59E0B; color:#1E293B; font-size:.875rem; font-weight:800; cursor:pointer; font-family:inherit; transition:background .2s;"
+                                            onmouseover="this.style.background='#D97706'"
+                                            onmouseout="this.style.background='#F59E0B'">
+                                        Submit Balance Payment →
+                                    </button>
+                                </form>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+                @endif
             @empty
                 <tr>
                     <td colspan="7" class="text-center py-5">
@@ -132,5 +239,17 @@
     </div>
     @endif
 </div>
+
+@push('scripts')
+<script>
+function showReceiptName(input, nameId) {
+    const el = document.getElementById(nameId);
+    if (input.files.length) {
+        el.textContent = '✓ ' + input.files[0].name;
+        el.style.display = 'block';
+    }
+}
+</script>
+@endpush
 
 @endsection

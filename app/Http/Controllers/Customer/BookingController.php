@@ -5,8 +5,11 @@ namespace App\Http\Controllers\Customer;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreBookingRequest;
 use App\Models\Booking;
+use App\Models\BookingPayment;
 use App\Models\Car;
+use App\Models\UserDocument;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -34,9 +37,30 @@ class BookingController extends Controller
                 ]);
             }
 
-            $pickup = Carbon::parse($request->pickup_date);
-            $return = Carbon::parse($request->return_date);
-            $days = max(1, $pickup->diffInDays($return) + 1);
+            $pickupDate = $request->pickup_date;
+            $returnDate = $request->return_date;
+
+            if (! is_string($pickupDate) || ! is_string($returnDate)) {
+                throw ValidationException::withMessages([
+                    'pickup_date' => 'Invalid pickup or return date provided.',
+                ]);
+            }
+
+            try {
+                $pickup = Carbon::createFromFormat('Y-m-d', $pickupDate);
+                $return = Carbon::createFromFormat('Y-m-d', $returnDate);
+            } catch (\Throwable $e) {
+                throw ValidationException::withMessages([
+                    'pickup_date' => 'Invalid pickup or return date provided.',
+                ]);
+            }
+
+            if (! $pickup || ! $return) {
+                throw ValidationException::withMessages([
+                    'pickup_date' => 'Invalid pickup or return date provided.',
+                ]);
+            }
+            $days = max(1, $pickup->diffInDays($return));
             $total = $car->daily_rate * $days;
 
             $validIdPath = null;
@@ -137,5 +161,34 @@ class BookingController extends Controller
         $booking->car->update(['status' => 'available']);
 
         return back()->with('success', 'Booking cancelled successfully.');
+    }
+
+    public function submitBalancePayment(Request $request, Booking $booking)
+    {
+        if ($booking->user_id !== auth()->id()
+            || !$booking->canPayBalance()) {
+            return back()->with('error', 'This action is not allowed for this booking.');
+        }
+
+        $request->validate([
+            'balance_gcash_reference_no' => 'required|string|max:30',
+            'balance_gcash_receipt'      => 'required|file|mimes:jpg,jpeg,png|max:10240',
+        ], [
+            'balance_gcash_reference_no.required' => 'Please enter your GCash reference number for the balance payment.',
+            'balance_gcash_receipt.required'      => 'Please upload your GCash receipt screenshot for the balance payment.',
+        ]);
+
+        $receiptPath = null;
+        if ($request->hasFile('balance_gcash_receipt')) {
+            $receiptPath = $request->file('balance_gcash_receipt')->store('gcash_receipts/balance', 'public');
+        }
+
+        $booking->update([
+            'balance_gcash_reference_no' => $request->balance_gcash_reference_no,
+            'balance_gcash_receipt_path' => $receiptPath,
+            'balance_payment_status'     => 'pending_confirmation',
+        ]);
+
+        return back()->with('success', 'Your balance payment receipt has been submitted. Our staff will confirm your payment shortly.');
     }
 }

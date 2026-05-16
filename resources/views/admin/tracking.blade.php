@@ -16,7 +16,7 @@
             <label class="form-label mb-1 fw-semibold" style="font-size:.78rem;">Status</label>
             <select name="status" class="form-select form-select-sm" style="border-radius:8px; border-color:#E2E8F0;">
                 <option value="">All</option>
-                @foreach(['Pending Payment', 'Partial Payment', 'Payment Confirmed', 'Completed', 'Cancelled'] as $status)
+                @foreach(['Pending Payment', 'Partial Payment', 'Payment Confirmed', 'Pending Balance', 'Completed', 'Cancelled'] as $status)
                     <option value="{{ $status }}" {{ request('status') === $status ? 'selected' : '' }}>
                         {{ $status }}
                     </option>
@@ -65,6 +65,7 @@
                         'Pending Payment' => '#D97706',
                         'Partial Payment' => '#B45309',
                         'Payment Confirmed' => '#1D4ED8',
+                        'Pending Balance' => '#0F766E',
                         'Completed' => '#166534',
                         default => '#991B1B',
                     };
@@ -107,6 +108,26 @@
                                 data-bs-target="#docsModal{{ $b->id }}">
                             <i class="bi bi-file-person me-1"></i>Docs
                         </button>
+
+                        @if($b->balance_payment_status === 'pending_confirmation')
+                            <form method="POST" action="{{ route('admin.tracking.confirmBalance', $b) }}" style="display:contents;">
+                                @csrf
+                                <button type="submit"
+                                        style="background:none; border:none; padding:0; font-size:.8rem; font-weight:700; color:#5B21B6; cursor:pointer; text-decoration:underline; text-underline-offset:3px;">
+                                    Confirm Balance
+                                </button>
+                            </form>
+                        @endif
+
+                        @if($b->payment_status === 'Pending Balance')
+                            <form method="POST" action="{{ route('admin.tracking.settleBalance', $b) }}" style="display:contents;">
+                                @csrf
+                                <button type="submit"
+                                        style="background:none; border:none; padding:0; font-size:.8rem; font-weight:700; color:#166534; cursor:pointer; text-decoration:underline; text-underline-offset:3px;">
+                                    Settle Balance
+                                </button>
+                            </form>
+                        @endif
 
                         @if($b->payment_status === 'Pending Payment')
                             <form method="POST" action="{{ route('admin.tracking.confirmPayment', $b) }}" style="display:contents;">
@@ -183,7 +204,7 @@
                                             </span>
                                         </div>
 
-                                        @if($b->payment_status === 'Completed' && $b->remaining_balance > 0)
+                                        @if($b->payment_status === 'Pending Balance' && $b->remaining_balance > 0)
                                             <div class="mb-4" style="background:#FEE2E2; border:1px solid #FCA5A5; color:#991B1B; border-radius:12px; padding:1rem;">
                                                 <strong>Customer has an outstanding balance of ₱{{ number_format($b->remaining_balance, 2) }}.</strong>
                                                 Please collect before releasing.
@@ -412,6 +433,37 @@
                                                 </div>
                                             @endif
                                         </div>
+
+                                        @if(in_array($b->balance_payment_status, ['pending_confirmation', 'confirmed']))
+                                        <div style="margin-top:1.25rem;">
+                                            <div style="font-size:.75rem; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:#94A3B8; margin-bottom:.75rem;">
+                                                Balance Payment Receipt
+                                            </div>
+
+                                            {{-- Reference number --}}
+                                            <div style="font-size:.8rem; color:#64748B; margin-bottom:.75rem;">
+                                                <span style="font-weight:700; color:#1E293B;">Ref No: </span>
+                                                {{ $b->balance_gcash_reference_no ?? '—' }}
+                                            </div>
+
+                                            {{-- Receipt image --}}
+                                            @if($b->balance_gcash_receipt_path)
+                                                <img src="{{ Storage::url($b->balance_gcash_receipt_path) }}"
+                                                     style="width:100%; max-height:280px; object-fit:contain; border-radius:10px; border:1px solid #E2E8F0; display:block;">
+                                                <a href="{{ Storage::url($b->balance_gcash_receipt_path) }}"
+                                                   target="_blank"
+                                                   style="font-size:.75rem; color:#3B82F6; font-weight:600; text-decoration:none; display:block; margin-top:.5rem;">
+                                                    Open full size
+                                                </a>
+                                            @endif
+
+                                            {{-- Confirmation status --}}
+                                            <div style="margin-top:.75rem; font-size:.78rem; font-weight:700;
+                                                        color:{{ $b->balance_payment_status === 'confirmed' ? '#166534' : '#D97706' }};">
+                                                {{ $b->balance_payment_status === 'confirmed' ? '✓ Balance payment confirmed' : '⏳ Awaiting confirmation' }}
+                                            </div>
+                                        </div>
+                                        @endif
 
                                         {{-- Birth Certificate --}}
                                         <div>

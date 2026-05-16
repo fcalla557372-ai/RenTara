@@ -38,8 +38,10 @@ Route::prefix('admin')->middleware(['auth', 'role:admin', 'theme'])->name('admin
     // Tracking
     Route::get('/tracking',                        [AdminTrackingController::class, 'index'])->name('tracking');
     Route::post('/tracking/{booking}/confirm-pay', [AdminTrackingController::class, 'confirmPayment'])->name('tracking.confirmPayment');
-    Route::post('/tracking/{booking}/return',      [AdminTrackingController::class, 'markReturn'])->name('tracking.markReturn');
-    Route::post('/tracking/{booking}/cancel',      [AdminTrackingController::class, 'cancel'])->name('tracking.cancel');
+    Route::post('/tracking/{booking}/confirm-balance', [AdminTrackingController::class, 'confirmBalancePayment'])->name('tracking.confirmBalance');
+    Route::post('/tracking/{booking}/settle-balance',  [AdminTrackingController::class, 'settleBalance'])->name('tracking.settleBalance');
+    Route::post('/tracking/{booking}/return',          [AdminTrackingController::class, 'markReturn'])->name('tracking.markReturn');
+    Route::post('/tracking/{booking}/cancel',          [AdminTrackingController::class, 'cancel'])->name('tracking.cancel');
 
     // Car Inventory
     Route::get('/car-inventory',          [CarInventoryController::class, 'index'])->name('car-inventory');
@@ -62,8 +64,10 @@ Route::prefix('admin')->middleware(['auth', 'role:admin', 'theme'])->name('admin
 Route::prefix('staff')->middleware(['auth', 'role:staff', 'theme'])->name('staff.')->group(function () {
     Route::get('/tracking',                        [StaffTrackingController::class, 'index'])->name('tracking');
     Route::post('/tracking/{booking}/confirm-pay', [StaffTrackingController::class, 'confirmPayment'])->name('tracking.confirmPayment');
-    Route::post('/tracking/{booking}/return',      [StaffTrackingController::class, 'markReturn'])->name('tracking.markReturn');
-    Route::post('/tracking/{booking}/cancel',      [StaffTrackingController::class, 'cancel'])->name('tracking.cancel');
+    Route::post('/tracking/{booking}/confirm-balance', [StaffTrackingController::class, 'confirmBalancePayment'])->name('tracking.confirmBalance');
+    Route::post('/tracking/{booking}/settle-balance',  [StaffTrackingController::class, 'settleBalance'])->name('tracking.settleBalance');
+    Route::post('/tracking/{booking}/return',          [StaffTrackingController::class, 'markReturn'])->name('tracking.markReturn');
+    Route::post('/tracking/{booking}/cancel',          [StaffTrackingController::class, 'cancel'])->name('tracking.cancel');
     Route::get('/car-inventory',                   [StaffCarInventoryController::class, 'index'])->name('car-inventory');
 });
 
@@ -73,5 +77,6 @@ Route::prefix('customer')->middleware(['auth', 'role:customer', 'theme'])->name(
     Route::post('/booking',                      [BookingController::class, 'store'])->name('booking.store');
     Route::get('/my-bookings',                   [BookingController::class, 'myBookings'])->name('my-bookings');
     Route::post('/my-bookings/{booking}/cancel', [BookingController::class, 'cancel'])->name('my-bookings.cancel');
+    Route::post('/my-bookings/{booking}/pay-balance', [BookingController::class, 'submitBalancePayment'])->name('my-bookings.pay-balance');
     Route::post('/theme',                        [ThemeController::class, 'update'])->name('theme');
 });

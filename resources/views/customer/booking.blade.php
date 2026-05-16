@@ -440,16 +440,15 @@
             <div class="lux-field">
                 <label>Amount to be Paid (30% upfront) *</label>
                 <input type="text" readonly :value="'₱' + formatCurrency(partialAmount)" />
-                <input type="hidden" name="amount_paid" x-ref="amountPaidPartial" :value="partialAmount">
             </div>
         </div>
         <div class="col-md-6" x-show="paymentType === 'full'" style="display:none;">
             <div class="lux-field">
                 <label>Amount Paid *</label>
                 <input type="text" readonly :value="'₱' + formatCurrency(totalNumeric)" />
-                <input type="hidden" name="amount_paid" x-ref="amountPaidFull" :value="totalNumeric">
             </div>
         </div>
+        <input type="hidden" name="amount_paid" x-ref="amountPaid" value="{{ old('amount_paid', '') }}" :value="paymentType === 'full' ? totalNumeric : partialAmount">
         <div class="col-md-6">
             <div class="lux-field">
                 <label>GCash Reference Number *</label>
@@ -562,7 +561,7 @@ function bookingCalc() {
             if (this.pickupDate && this.returnDate && this.rate > 0) {
                 const p = new Date(this.pickupDate);
                 const r = new Date(this.returnDate);
-                const days = Math.max(1, Math.floor((r - p) / 86400000) + 1);
+                const days = Math.max(1, Math.floor((r - p) / 86400000));
                 this.totalNumeric = +(this.rate * days).toFixed(2);
                 this.total = this.totalNumeric.toLocaleString('en-PH', { minimumFractionDigits: 2 });
                 this.daysText = days + ' day' + (days !== 1 ? 's' : '') + ' × ₱' + this.rate.toLocaleString('en-PH') + '/day';
@@ -590,11 +589,8 @@ function bookingCalc() {
         },
 
         updateAmountPaidFields() {
-            // Update the hidden input value attributes before form submission
-            if (this.paymentType === 'partial' && this.$refs.amountPaidPartial) {
-                this.$refs.amountPaidPartial.value = this.partialAmount;
-            } else if (this.paymentType === 'full' && this.$refs.amountPaidFull) {
-                this.$refs.amountPaidFull.value = this.totalNumeric;
+            if (this.$refs.amountPaid) {
+                this.$refs.amountPaid.value = this.paymentType === 'full' ? this.totalNumeric : this.partialAmount;
             }
         }
     }

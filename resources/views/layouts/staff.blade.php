@@ -180,6 +180,7 @@
 
         .status-badge { display:inline-flex;align-items:center;padding:.28rem .72rem;border-radius:9999px;font-size:.7rem;font-weight:700;letter-spacing:.3px;white-space:nowrap; }
         .badge-pending   {background:#FEF3C7;color:#92400E}
+        .badge-pending-balance {background:#CCFBF1;color:#0F766E}
         .badge-confirmed {background:#DBEAFE;color:#1E40AF}
         .badge-completed {background:#D1FAE5;color:#065F46}
         .badge-cancelled {background:#FEE2E2;color:#991B1B}

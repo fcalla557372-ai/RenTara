@@ -15,7 +15,8 @@ class AdminDashboardController extends Controller
         $available = Car::where('status', 'available')->count();
         $rented = Car::where('status', 'rented')->count();
         $pending = BookingPayment::where('payment_status', 'Pending Payment')->count();
-        $todayEarnings = BookingPayment::whereIn('payment_status', ['Partial Payment', 'Payment Confirmed', 'Completed'])
+        $pendingBalance = BookingPayment::where('payment_status', 'Pending Balance')->count();
+        $todayEarnings = BookingPayment::whereIn('payment_status', ['Partial Payment', 'Payment Confirmed', 'Pending Balance', 'Completed'])
             ->whereDate('updated_at', today())
             ->sum('amount_paid');
 
@@ -33,7 +34,7 @@ class AdminDashboardController extends Controller
             ->paginate(10);
 
         return view('admin.dashboard', compact(
-            'allCars', 'available', 'rented', 'pending',
+            'allCars', 'available', 'rented', 'pending', 'pendingBalance',
             'todayEarnings', 'fleetCounts', 'recentBookings'
         ));
     }

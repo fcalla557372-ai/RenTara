@@ -187,6 +187,33 @@
         </a>
     </div>
 
+    {{-- Pending Balance --}}
+    <div class="col-12 col-sm-6 col-md col-lg">
+        <a href="{{ route('admin.tracking', ['status' => 'Pending Balance']) }}" class="text-decoration-none">
+            <div class="stat-card" style="border-left:4px solid #14B8A6; cursor:pointer;
+                        transition:box-shadow .2s, transform .2s;"
+                 onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 12px rgba(0,0,0,.06)' /* refined */"
+                 onmouseout="this.style.transform='';this.style.boxShadow=''">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div style="font-size:.9rem; font-weight:800; text-transform:uppercase;
+                                    letter-spacing:1px; color:#94A3B8; margin-bottom:.25rem;">
+                            Pending Balance
+                        </div>
+                        <div style="font-size:.85rem; color:#CBD5E1; margin-top:.2rem;">
+                            Awaiting settlement →
+                        </div>
+                    </div>
+                    <div style="text-align:right; min-width:70px;">
+                        <div style="font-size:1.6rem; font-weight:900; color:#1E293B; line-height:1;">
+                            {{ $pendingBalance }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+
     {{-- Today's Earnings --}}
     <div class="col-12 col-sm-6 col-md col-lg">
         <a href="{{ route('admin.report') }}" class="text-decoration-none">
@@ -324,7 +351,7 @@
                         </span>
                     </td>
                     <td>
-                        <span style="font-size:.8rem; font-weight:700; color:{{ $b->payment_status === 'Pending Payment' ? '#D97706' : ($b->payment_status === 'Payment Confirmed' ? '#1D4ED8' : ($b->payment_status === 'Completed' ? '#166534' : '#991B1B')) }};">
+                        <span style="font-size:.8rem; font-weight:700; color:{{ $b->payment_status === 'Pending Payment' ? '#D97706' : ($b->payment_status === 'Partial Payment' ? '#B45309' : ($b->payment_status === 'Payment Confirmed' ? '#1D4ED8' : ($b->payment_status === 'Pending Balance' ? '#0F766E' : ($b->payment_status === 'Completed' ? '#166534' : '#991B1B')))) }};">
                             {{ $b->payment_status }}
                         </span>
                     </td>

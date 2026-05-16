@@ -10,7 +10,7 @@ class AdminTrackingController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Booking::with(['user', 'car'])->latest();
+        $query = Booking::with(['user', 'car', 'payment', 'document'])->latest();
 
         if ($request->filled('status')) {
             $query->whereHas('payment', fn($q) => $q->where('payment_status', $request->status));
@@ -40,15 +40,56 @@ class AdminTrackingController extends Controller
         return back()->with('success', 'Payment confirmed successfully.');
     }
 
+    public function confirmBalancePayment(Booking $booking)
+    {
+        if ($booking->balance_payment_status !== 'pending_confirmation') {
+            return back()->with('error', 'No pending balance payment to confirm for this booking.');
+        }
+
+        $booking->update([
+            'balance_status'         => 'paid',
+            'balance_payment_status' => 'confirmed',
+        ]);
+
+        $booking->payment->update([
+            'payment_status'   => 'Completed',
+            'remaining_balance' => 0,
+        ]);
+
+        return back()->with('success', 'Balance payment confirmed for ' . $booking->user->name . '. Booking is now fully settled.');
+    }
+
+    public function settleBalance(Booking $booking)
+    {
+        if (! $booking->payment || $booking->payment->payment_status !== 'Pending Balance') {
+            return back()->with('error', 'Only bookings with a pending balance can be settled.');
+        }
+
+        $booking->payment->update([
+            'amount_paid'      => $booking->payment->amount_paid + $booking->payment->remaining_balance,
+            'remaining_balance'=> 0,
+            'payment_status'   => 'Completed',
+        ]);
+
+        $booking->update([
+            'balance_status'         => 'paid',
+            'balance_payment_status' => 'confirmed',
+        ]);
+
+        return back()->with('success', 'Booking balance settled and marked as completed.');
+    }
+
     public function markReturn(Booking $booking)
     {
         if (! $booking->payment || ! in_array($booking->payment->payment_status, ['Payment Confirmed', 'Partial Payment'], true)) {
             return back()->with('error', 'Only confirmed or partially confirmed bookings can be marked as returned.');
         }
 
-        $booking->payment->update(['payment_status' => 'Completed']);
+        $nextStatus = $booking->payment->remaining_balance > 0 ? 'Pending Balance' : 'Completed';
+        $booking->payment->update(['payment_status' => $nextStatus]);
         $booking->car->update(['status' => 'available']);
-        return back()->with('success', 'Booking marked as completed. Car is now available.');
+
+        return back()->with('success', 'Booking marked as returned. Car is now available.');
     }
 
     public function cancel(Booking $booking)
