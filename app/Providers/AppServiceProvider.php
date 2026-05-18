@@ -1,24 +1,53 @@
 <?php
+
+
+
 namespace App\Providers;
 
-use App\Models\Booking;
-use App\Models\Car;
-use App\Policies\BookingPolicy;
-use App\Policies\CarPolicy;
-use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
-use Illuminate\Pagination\Paginator;
-use Illuminate\Support\Facades\Gate;
+
+
+use Illuminate\Support\ServiceProvider;
+
+use Illuminate\Support\Facades\URL;
+
+
 
 class AppServiceProvider extends ServiceProvider
+
 {
-    protected $policies = [
-        Booking::class => BookingPolicy::class,
-        Car::class     => CarPolicy::class,
-    ];
+
+    /**
+
+     * Register any application services.
+
+     */
+
+    public function register(): void
+
+    {
+
+        //
+
+    }
+
+
+
+    /**
+
+     * Bootstrap any application services.
+
+     */
 
     public function boot(): void
+
     {
-        $this->registerPolicies();
-        Paginator::useTailwind();
+
+        if (env('APP_ENV') === 'production') {
+
+            URL::forceScheme('https');
+
+        }
+
     }
+
 }
